@@ -2,86 +2,92 @@ import tkinter as tk
 from tkinter import ttk
 
 def affiche(grille):
-
-    fenetre = tk.Tk()
-    fenetre.title("Jeu de la vie")
-
-    taille_carre = 20
+    fenetre = tk.Tk()  #  Création de la fenetre
+    fenetre.title("Jeu de la vie") #titre de la fenetre
+    taille_carre = 50   # taille de chaque carré en PX
     vitesse_base = 1000  # Vitesse de base en millisecondes
     multiplicateur = 10  # Multiplicateur pour le curseur de vitesse
     en_cours = False  # Indique si le jeu est en cours ou non
 
-    canvas = tk.Canvas(fenetre, width=taille_carre*10, height=taille_carre*10, bg='white')
+    canvas = tk.Canvas(fenetre, width=taille_carre*10, height=taille_carre*10, bg='white') #créer la fenetre en fonction de la taille des carrés
     canvas.pack()
 
-    carres = [[None]*10 for _ in range(10)]
+    carres = [[None]*10 for _ in range(10)] # on crée la grille en 10*10 et on assigne la valeur None a chaque carré pour pouvoir les définir plus tard
 
-    def changer_couleur(event, i, j):
-        if grille[i][j] == 0:
-            grille[i][j] = 1
-            color = 'black'
-        else:
-            grille[i][j] = 0
-            color = 'white'
-        canvas.itemconfig(carres[i][j], fill=color)
+    def changer_couleur(i, j): # on créee la fonction pour changer de couleur au click du carré (soit blanc soit noir)
+        if grille[i][j] == 0: # si couleur = blanc
+            grille[i][j] = 1 #grille mettre couleur a noir
+            color = 'black' # pour le item config en bas
+        else: # si couleur = noir
+            grille[i][j] = 0  # mettre couleur a blanc
+            color = 'white' # toujours pour le item config
+        canvas.itemconfig(carres[i][j], fill=color) #on met a jour les carrés sur le canva
 
     for i in range(10):
         for j in range(10):
-            x = j * taille_carre
-            y = i * taille_carre
-            if grille[i][j] == 0:
-                color = 'white'
-            else:
+            x = j * taille_carre # position x sur le canva du carré
+            y = i * taille_carre # position y
+            if grille[i][j] == 0: #si couleur est blanche
+                color = 'white' # pour en bas
+            else: # si couleur = noir
                 color = 'black'
-            carres[i][j] = canvas.create_rectangle(x, y, x + taille_carre, y + taille_carre, fill=color)
-            canvas.tag_bind(carres[i][j], '<Button-1>', lambda event, i=i, j=j: changer_couleur(event, i, j))
-
+            carres[i][j] = canvas.create_rectangle(x, y, x + taille_carre, y + taille_carre, fill=color) # on associe le carré qui avait la valeur Null à un carré sur le canva de position
+            # x = variable x, y=y, de taille taille_carre, et de la couleur color, définie plus haut
+            canvas.tag_bind(carres[i][j], '<Button-1>', lambda event, i=i, j=j: changer_couleur(i, j)) #event on va créer un boutton sur chaque carré, pour que au click cela change la couleur en appelant la fonction changer_couleur
+            # '<Button-1>' => click gauche de la souris ; lambda event => on associe un event au click de la souris, qui est déclencher la fonction changer couleur avec les ID du carré
     # Fonctions pour gérer le jeu de la vie
     def play():
         nonlocal en_cours
         en_cours = True
         mise_a_jour()
+        # on met en route la fonction mise a jour pour meettre en route le canva et donc le jeu
 
     def pause():
         nonlocal en_cours
         en_cours = False
+        # arrete la fonction mise a jour
 
     def adjust_speed(value):
-        # Ajuste la vitesse de rafraîchissement en fonction de la valeur du curseur
+        # Ajuste la vitesse de rafraîchissement en fonction de la valeur du curseur, a chaque fois quil est bougé la fonction est appelée avec la valeur du curseur (value)
         nonlocal vitesse_base
         vitesse_base = int(float(value)) * multiplicateur
 
     def mise_a_jour():
         nonlocal en_cours
         if en_cours:
-            nouvelle_grille = [[0]*10 for _ in range(10)]
+            nouvelle_grille = [[0]*10 for _ in range(10)]#crée une liste de 0 sur un carré de 10*10
             for i in range(10):
-                for j in range(10):
-                    voisins_i = [(i-1)%10, i, (i+1)%10]
+                for j in range(10):# pour chaque cellule du carré
+                    voisins_i = [(i-1)%10, i, (i+1)%10] # on va calculer les ID de chaque voisin de la cellule
                     voisins_j = [(j-1)%10, j, (j+1)%10]
-                    somme = sum(grille[x][y] for x in voisins_i for y in voisins_j if (x, y) != (i, j))
-                    if grille[i][j] == 1 and somme in [2, 3]:
+                    # EXEMPLE :
+                    # pour la cellule (6;4) : voisin_i retournera [5,6,7] et voisin_y retournera [3,4,5]
+                    # le % signifie modulo, ainsi si la valeur de i ou j +/- 1 est > ou < à 10 ou 0, on ira a la cellule opposée : -1%10 = 9 et 10%10=0
+                    somme = sum(grille[x][y] for x in voisins_i for y in voisins_j if (x, y) != (i, j)) #on crée une somme de tous les voisins de couleur noire de la cellule, en excluant la cellule propre :if (x, y) != (i, j))
+                    if grille[i][j] == 1 and somme in [2, 3]:# si couleur noire est que la somme est de 2 ou 3, elle reste vivante
                         nouvelle_grille[i][j] = 1
-                    elif grille[i][j] == 0 and somme == 3:
+                    elif grille[i][j] == 0 and somme == 3:# si elle est blanche et quelle a 3 voisins vivants (noirs) elle devient vivante aussi (noire)
                         nouvelle_grille[i][j] = 1
-            grille[:] = nouvelle_grille[:]
+            grille[:] = nouvelle_grille[:] #  La grille originale est mise à jour avec les valeurs de nouvelle_grille.
             for i in range(10):
                 for j in range(10):
-                    color = 'black' if grille[i][j] == 1 else 'white'
-                    canvas.itemconfig(carres[i][j], fill=color)
-            fenetre.after(vitesse_base, mise_a_jour)
+                    color = 'black' if grille[i][j] == 1 else 'white' # si le carré est noir alors color=noir, sinon
+                    canvas.itemconfig(carres[i][j], fill=color) #on actualise le carré avec la couleur définie au dessus
+            fenetre.after(vitesse_base, mise_a_jour) # tous les "vitesse_base"miliseconde on appelle la foncton mise_a_jour, donc celle ci (rafraichissement de la fenetre)
 
     # Ajout des boutons "play" et "pause"
-    play_button = ttk.Button(fenetre, text="Play", command=play)
-    play_button.pack(side="left")
-    pause_button = ttk.Button(fenetre, text="Pause", command=pause)
-    pause_button.pack(side="left")
+    play_button = ttk.Button(fenetre, text="Play", command=play) # bouton play qui appelle la fonction play
+    play_button.pack(side="left") # on le met a gauche
+    pause_button = ttk.Button(fenetre, text="Pause", command=pause)#bouton pause qui appelle la fonction pause
+    pause_button.pack(side="left")#play_button le met ausi a gauche mais a droite de la fonctionn play
 
     # Ajout d'un curseur pour ajuster la vitesse de rafraîchissement
-    speed_scale = ttk.Scale(fenetre, from_=1, to=10, orient="horizontal", command=adjust_speed)
-    speed_scale.pack()
+    speed_scale = ttk.Scale(fenetre, from_=1, to=10, orient="horizontal", command=adjust_speed)#curseur entre 1 et 10, horizontal
+    speed_scale.pack()#on ajoute tout ca a la fenetre
 
-    fenetre.mainloop()
+    fenetre.mainloop()# on lance
 
-grille = [[0]*10 for _ in range(10)]
-affiche(grille)
+grille = [[0]*10 for _ in range(10)]# on crée la grille de base, toute blanche (valeur 0)
+affiche(grille)# on lance la fonction de base   fenetre.after(vitesse_base, mise_a_jour) # tous les "vitesse_base"miliseconde on appelle la foncton mise_a_jour, donc celle ci (rafraichissement de la fenetre)
+
+    # Ajout des boutons "play" et "pause"
